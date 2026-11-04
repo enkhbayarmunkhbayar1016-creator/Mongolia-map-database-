@@ -1,0 +1,32 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy atlas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository and Git LFS data
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

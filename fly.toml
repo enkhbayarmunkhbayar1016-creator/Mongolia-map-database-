@@ -1,9 +1,9 @@
-# fly.toml app configuration file for the existing Fly.io app "desert"
+# fly.toml app configuration for the Mongolia desertification atlas
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'desert'
+app = 'mongolia-desert-atlas-enhuush'
 primary_region = 'sin'
 
 [build]
