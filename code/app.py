@@ -2,16 +2,19 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DATABASE_DIR = PROJECT_DIR / "database"
 CSV_PATH = DATABASE_DIR / "mongolia_desert_monthly_aimags.csv"
 GPKG_PATH = DATABASE_DIR / "mongolia_desert_db.gpkg"
+STATIC_DIR = PROJECT_DIR / "static"
 
 app = FastAPI(title="Монголын Цөлжилтийн Атлас")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,6 +52,13 @@ def api_summary():
         "year_end": int(df["year"].max()),
         "total_area": round(float(df["desert_area_sqkm"].sum()), 2),
     }
+
+
+@app.get("/healthz")
+def health_check():
+    if df.empty or not CSV_PATH.is_file() or not GPKG_PATH.is_file():
+        raise HTTPException(status_code=503, detail="Required atlas data is unavailable")
+    return {"status": "ok"}
 
 
 @app.get("/api/aimags")
@@ -184,6 +194,7 @@ HTML_PAGE = """
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Монголын Цөлжилтийн Атлас (2002–2022)</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -293,7 +304,7 @@ HTML_PAGE = """
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-desert-500 to-accent-amber flex items-center justify-center text-desert-950 font-bold text-xl shadow-lg glow-amber">Г</div>
         <div>
           <span class="text-[10px] uppercase tracking-[0.28rem] text-desert-400 font-semibold block">Монгол улс</span>
-          <h1 class="text-sm md:text-base font-bold text-desert-100 tracking-tight leading-none">Монголын Газрын Мэдээллийн Сангийн Төв</h1>
+          <h1 class="text-sm md:text-base font-bold text-desert-100 tracking-tight leading-none">Монголын Улсын мэдээллийн сангийн төв</h1>
         </div>
       </div>
 
@@ -302,6 +313,7 @@ HTML_PAGE = """
         <button data-tab="atlas" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-desert-300 hover:text-desert-100 hover:bg-desert-card/50"> <i class="fa-solid fa-map-location-dot mr-2 text-xs"></i>Атлас</button>
         <button data-tab="compare" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-desert-300 hover:text-desert-100 hover:bg-desert-card/50"> <i class="fa-solid fa-code-compare mr-2 text-xs"></i>Харьцуулах</button>
         <button data-tab="database" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-desert-300 hover:text-desert-100 hover:bg-desert-card/50"> <i class="fa-solid fa-database mr-2 text-xs"></i>Мэдээллийн сан</button>
+        <button data-tab="resources" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-desert-300 hover:text-desert-100 hover:bg-desert-card/50"> <i class="fa-solid fa-link mr-2 text-xs"></i>Эх сурвалж</button>
         <button data-tab="methodology" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all text-desert-300 hover:text-desert-100 hover:bg-desert-card/50"> <i class="fa-solid fa-book-bookmark mr-2 text-xs"></i>Арга зүй</button>
       </nav>
 
@@ -321,6 +333,7 @@ HTML_PAGE = """
       <button data-tab="atlas" class="nav-btn text-left px-4 py-2 rounded-lg text-sm text-desert-100 hover:bg-desert-card">Атлас үзэх</button>
       <button data-tab="compare" class="nav-btn text-left px-4 py-2 rounded-lg text-sm text-desert-100 hover:bg-desert-card">Харьцуулах</button>
       <button data-tab="database" class="nav-btn text-left px-4 py-2 rounded-lg text-sm text-desert-100 hover:bg-desert-card">Мэдээллийн сан</button>
+      <button data-tab="resources" class="nav-btn text-left px-4 py-2 rounded-lg text-sm text-desert-100 hover:bg-desert-card">Эх сурвалж</button>
       <button data-tab="methodology" class="nav-btn text-left px-4 py-2 rounded-lg text-sm text-desert-100 hover:bg-desert-card">Арга зүй</button>
     </div>
   </header>
@@ -623,6 +636,122 @@ HTML_PAGE = """
       </div>
     </section>
 
+    <section id="resources" class="tab-content space-y-6">
+      <div class="relative overflow-hidden rounded-3xl border border-desert-border bg-gradient-to-br from-desert-950 via-desert-panel to-desert-card p-8 md:p-12">
+        <div class="absolute -right-16 -bottom-36 h-80 w-80 rounded-full border border-accent-gold/20 shadow-[0_0_0_28px_rgba(245,158,11,0.04),0_0_0_58px_rgba(245,158,11,0.025)]"></div>
+        <div class="relative z-10 max-w-3xl space-y-4">
+          <span class="inline-flex items-center gap-2 rounded-full border border-desert-400/30 bg-desert-500/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-desert-200">
+            <span class="h-2 w-2 rounded-full bg-accent-amber"></span>
+            МЭДЭЭЛЭЛ · СУДАЛГАА · ЭХ СУРВАЛЖ
+          </span>
+          <h2 class="text-3xl font-extrabold leading-tight tracking-tight text-desert-100 md:text-5xl">
+            Монгол орны <span class="text-accent-gold">цөлжилтийн тухай</span>
+          </h2>
+          <p class="max-w-2xl text-sm leading-relaxed text-desert-300 md:text-base">
+            Цөлжилт, газрын доройтлын талаарх үндэсний мэдээ, олон улсын туршлага,
+            эрдэм шинжилгээний өгүүллүүдийг нэг дороос үзэж, эх сурвалж руу нь шууд нэвтэрнэ.
+          </p>
+          <div class="flex flex-wrap gap-2 pt-1 text-[11px]">
+            <span class="rounded-full border border-desert-border bg-desert-dark/50 px-3 py-1.5 text-desert-200">Үндэсний мэдээ</span>
+            <span class="rounded-full border border-desert-border bg-desert-dark/50 px-3 py-1.5 text-desert-200">Олон улсын байгууллага</span>
+            <span class="rounded-full border border-desert-border bg-desert-dark/50 px-3 py-1.5 text-desert-200">Эрдэм шинжилгээ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-end justify-between gap-3 pt-2">
+        <div>
+          <h3 class="text-lg font-bold text-desert-100">Онцлох үндэсний мэдээлэл</h3>
+          <p class="mt-1 text-xs text-desert-400">Шинэчилсэн улсын хэмжээний үнэлгээний тухай</p>
+        </div>
+        <span class="text-xs text-desert-400">01 · онцлох эх сурвалж</span>
+      </div>
+
+      <article class="grid grid-cols-1 gap-5 rounded-2xl border border-accent-amber/30 bg-gradient-to-r from-desert-card to-desert-panel p-5 md:grid-cols-[1fr_240px] md:p-6">
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-[0.12em] text-accent-gold">MONTSAME · 2026 оны 8-р сар</div>
+          <h3 class="mb-2 mt-2 text-lg font-bold leading-snug text-desert-100 md:text-xl">
+            Монгол Улсын нутаг дэвсгэрийн 81.9 хувь цөлжилт, газрын доройтолд өртжээ
+          </h3>
+          <p class="text-xs leading-relaxed text-desert-300">
+            2026 онд танилцуулсан шинэчилсэн атласын дүнгээр улсын нийт нутаг дэвсгэрийн
+            0.9% маш хүчтэй, 6.2% хүчтэй, 42.9% дунд, 31.9% бага доройтлын ангилалд орсон тухай мэдээ.
+          </p>
+          <a href="https://www.montsame.mn/en/read/407137" target="_blank" rel="noopener noreferrer"
+             class="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-accent-gold hover:text-desert-200">
+            MONTSAME мэдээг унших <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </div>
+        <div class="flex flex-col justify-center border-t border-desert-border pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+          <strong class="text-4xl font-extrabold tracking-tight text-desert-200">81.9%</strong>
+          <span class="mt-2 text-xs text-desert-300">ямар нэг түвшинд цөлжилт, газрын доройтолд өртсөн</span>
+          <small class="mt-1 text-[10px] text-desert-400">2026 оны шинэчилсэн атласын мэдээлэл</small>
+        </div>
+      </article>
+
+      <div class="flex flex-wrap items-end justify-between gap-3 pt-3">
+        <div>
+          <h3 class="text-lg font-bold text-desert-100">Судалгаа ба нийтлэлүүд</h3>
+          <p class="mt-1 text-xs text-desert-400">Мэдээ, олон улсын байгууллага, эрдэм шинжилгээний эх сурвалж</p>
+        </div>
+        <span class="text-xs text-desert-400">3 эх сурвалж</span>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <article class="group flex min-h-[230px] flex-col rounded-2xl border border-desert-border bg-desert-panel p-5 transition hover:-translate-y-1 hover:border-desert-500/60">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-desert-300">Олон улсын байгууллага</span>
+            <span class="grid h-8 w-8 place-items-center rounded-lg border border-desert-border bg-desert-dark text-xs font-bold text-desert-200">UN</span>
+          </div>
+          <h4 class="mb-2 mt-5 text-base font-bold leading-snug text-desert-100">Говийн тэсвэр ба нөхөн сэргээлт</h4>
+          <p class="mb-5 text-xs leading-relaxed text-desert-300">
+            Монголын говьд цөлжилттэй тэмцэх, орон нутгийн тэсвэрийг дэмжих болон байгаль сэргээх тухай UNDP-ийн өгүүлэл.
+          </p>
+          <a href="https://www.undp.org/mongolia/stories/combating-desertification-mongolias-gobi-story-resilience-and-restoration"
+             target="_blank" rel="noopener noreferrer"
+             class="mt-auto flex items-center justify-between border-t border-desert-border pt-3 text-xs font-semibold text-accent-gold hover:text-desert-200">
+            UNDP Mongolia-д унших <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </article>
+
+        <article class="group flex min-h-[230px] flex-col rounded-2xl border border-desert-border bg-desert-panel p-5 transition hover:-translate-y-1 hover:border-desert-500/60">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-desert-300">Эрдэм шинжилгээний өгүүлэл</span>
+            <span class="grid h-8 w-8 place-items-center rounded-lg border border-desert-border bg-desert-dark text-xs font-bold text-desert-200">JP</span>
+          </div>
+          <h4 class="mb-2 mt-5 text-base font-bold leading-snug text-desert-100">Mongolian Journal of Geography and Geocology</h4>
+          <p class="mb-5 text-xs leading-relaxed text-desert-300">
+            Таны өгсөн сэтгүүлийн өгүүллийн хуудсыг нээж, нийтлэлийн дэлгэрэнгүй болон судалгааны эхийг үзнэ үү.
+          </p>
+          <a href="https://mongoliajol.info/index.php/MJGG/article/view/4248" target="_blank" rel="noopener noreferrer"
+             class="mt-auto flex items-center justify-between border-t border-desert-border pt-3 text-xs font-semibold text-accent-gold hover:text-desert-200">
+            Өгүүллийг нээх <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </article>
+
+        <article class="group flex min-h-[230px] flex-col rounded-2xl border border-desert-border bg-desert-panel p-5 transition hover:-translate-y-1 hover:border-desert-500/60">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-desert-300">Үндэсний мэдээ</span>
+            <span class="grid h-8 w-8 place-items-center rounded-lg border border-desert-border bg-desert-dark text-xs font-bold text-desert-200">M</span>
+          </div>
+          <h4 class="mb-2 mt-5 text-base font-bold leading-snug text-desert-100">Цөлжилт ба газрын доройтлын шинэчилсэн атлас</h4>
+          <p class="mb-5 text-xs leading-relaxed text-desert-300">
+            2026 оны шинэчилсэн үнэлгээ, Монгол орны цөлжилтийн хамрах хүрээ болон атласын гол үр дүнгийн талаарх мэдээ.
+          </p>
+          <a href="https://www.montsame.mn/en/read/407137" target="_blank" rel="noopener noreferrer"
+             class="mt-auto flex items-center justify-between border-t border-desert-border pt-3 text-xs font-semibold text-accent-gold hover:text-desert-200">
+            MONTSAME-д унших <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </article>
+      </div>
+
+      <p class="rounded-xl border border-desert-border bg-desert-panel/70 p-4 text-[11px] leading-relaxed text-desert-400">
+        Тайлбар: 81.9%-ийн үзүүлэлт нь 2026 онд танилцуулсан шинэчилсэн атласт хамаарна.
+        Энэ сайт дахь 2002–2022 оны аймгийн мэдээллээс тусдаа эх сурвалж юм.
+        Гадаад холбоосууд шинэ цонхонд нээгдэнэ.
+      </p>
+    </section>
+
     <section id="methodology" class="tab-content">
       <div class="bg-desert-panel rounded-2xl border border-desert-border p-6 md:p-8 space-y-6">
         <div>
@@ -671,7 +800,7 @@ HTML_PAGE = """
   <footer class="glass-panel border-t border-desert-border/60 py-6 px-4 lg:px-8 mt-12">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-desert-400 gap-4">
       <div>
-        <p class="font-semibold text-desert-200">МОНГОЛЫН ГАЗРЫН МЭДЭЭЛЛИЙН САНГИЙН ТӨВ &copy; 2002–2022</p>
+        <p class="font-semibold text-desert-200">МОНГОЛЫН УЛСЫН МЭДЭЭЛЛИЙН САНГИЙН ТӨВ &copy; 2002–2022</p>
         <p class="text-[11px] mt-0.5">Цөлжилтийн орон зайн шинжилгээний веб портал</p>
       </div>
       <div class="flex items-center space-x-6">
@@ -695,7 +824,7 @@ HTML_PAGE = """
     let aimagMapFeatures = [];
     let aimagMapBounds = null;
 
-    const allTabs = ['home', 'atlas', 'compare', 'database', 'methodology'];
+    const allTabs = ['home', 'atlas', 'compare', 'database', 'resources', 'methodology'];
 
     function setActiveTab(tab) {
       allTabs.forEach(name => {

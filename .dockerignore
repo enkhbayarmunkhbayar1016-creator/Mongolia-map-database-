@@ -3,3 +3,8 @@ fly.toml
 __pycache__/
 .envrc
 .venv/
+venv
+**/__pycache__
+*.py[cod]
+*.gpkg-shm
+*.gpkg-wal
