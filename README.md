@@ -26,19 +26,25 @@ longer and use substantial image storage.
 
 Requirements:
 
-- `flyctl` and a Fly.io account
-- Git LFS, with the GeoPackage downloaded locally
+- A Fly.io account and `flyctl`
+- The GeoPackage downloaded through Git LFS
+- A Fly.io deploy token saved as the GitHub Actions repository secret
+  `FLY_API_TOKEN`
 
-From the project root:
+Create the Fly app once from the project root. Replace `<your-org>` with the
+organization slug shown by `fly orgs list`:
 
 ```sh
-git lfs pull
 fly auth login
-fly status --app desert
-fly deploy --app desert
+fly apps create mongolia-desert-atlas-enhuush --org <your-org>
+fly tokens create deploy -x 999999h
 ```
 
-`fly.toml` targets the existing Fly.io app `desert`; `fly launch` is not needed.
+Copy the full deploy token into GitHub repository **Settings → Secrets and
+variables → Actions** as `FLY_API_TOKEN`. Do not commit the token or paste it
+into chat. After this setup, pushes to `main` deploy the app automatically.
+If Fly.io says the app name is already taken, choose another unique name and
+update the `app` value in `fly.toml` before creating the app.
 
 Fly.io builds the Docker image remotely, so a local Docker daemon is optional.
 The `/healthz` endpoint checks that the CSV data loaded and both required
