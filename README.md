@@ -34,13 +34,11 @@ From the project root:
 ```sh
 git lfs pull
 fly auth login
-fly launch --copy-config --no-deploy
-fly deploy
+fly status --app desert
+fly deploy --app desert
 ```
 
-`fly.toml` uses `mongolia-desert-atlas-enhuush` as a suggested app name. Fly.io
-app names must be globally unique; if it is already taken, change the `app`
-value in `fly.toml` before running `fly launch`.
+`fly.toml` targets the existing Fly.io app `desert`; `fly launch` is not needed.
 
 Fly.io builds the Docker image remotely, so a local Docker daemon is optional.
 The `/healthz` endpoint checks that the CSV data loaded and both required
