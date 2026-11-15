@@ -37,7 +37,9 @@ organization slug shown by `fly orgs list`:
 ```sh
 fly auth login
 fly apps create mongolia-desert-atlas-enhuush --org <your-org>
-fly tokens create deploy -x 999999h
+# Create a 90-day deploy token. Before it expires, rerun this command
+# and replace the FLY_API_TOKEN repository secret with the new token.
+fly tokens create deploy -x 2160h
 ```
 
 Copy the full deploy token into GitHub repository **Settings → Secrets and
